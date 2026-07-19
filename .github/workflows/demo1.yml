@@ -1,29 +1,93 @@
+# ─────────────────────────────────────────────────────────────
+# WORKFLOW NAME
+# This name appears on the GitHub Actions tab for every run
+# ─────────────────────────────────────────────────────────────
 name: Events Demo 1
+
+# ═════════════════════════════════════════════════════════════
+# ON = WHEN does this workflow run? (The "Event" section)
+# ═════════════════════════════════════════════════════════════
 on:
+
+  # ── EVENT 1: pull_request ────────────────────────────────
+  # Triggers when someone opens, updates, or interacts with a PR
   pull_request:
+    
+    # ACTIVITY TYPE (Privilege → WHICH action?)
+    # Without this, GitHub fires on ALL PR actions (opened, closed, edited, synchronize...)
+    # Here we ONLY care when a PR is first OPENED
     types:
       - opened
+    
+    # FILTER (More detail → WHERE did it happen?)
+    # Only run if the PR targets one of these branches
+    branches:
+      - main                # Exact match: only the "main" branch
+      - 'dev-*'             # Pattern match: dev-new, dev-this-is-new  (single level)
+      - 'feat/**'           # Pattern match: feat/new, feat/new/button (nested levels)
+
+  # ── EVENT 2: workflow_dispatch ───────────────────────────
+  # A manual button. Go to GitHub → Actions → click "Run workflow"
+  # No filters or types here — you control it by hand
   workflow_dispatch:
-  
-  
+
+  # ── EVENT 3: push ────────────────────────────────────────
+  # Triggers when someone pushes code (git push)
+  push:
+    
+    # FILTER: Only run on pushes to these branches
+    branches:
+      - main                # Exact match
+      - 'dev-*'             # Single-level wildcard
+      - 'feat/**'           # Multi-level wildcard
+    
+    # FILTER: IGNORE these paths (opposite of 'paths:')
+    # If the ONLY files changed are in .github/workflows/, SKIP this workflow
+    # Useful to avoid burning minutes on CI-only changes
+    paths-ignore: 
+      - '.github/workflows/*'
+
+# ═════════════════════════════════════════════════════════════
+# JOBS = WHAT does this workflow actually DO?
+# ═════════════════════════════════════════════════════════════
 jobs:
+
+  # Job ID: "deploy" (you can name it anything)
   deploy:
+    
+    # RUNNER: The virtual machine that executes the steps
+    # ubuntu-latest = a fresh Linux machine in the cloud
     runs-on: ubuntu-latest
+
+    # STEPS: Commands run one-by-one on the runner
     steps:
+
+      # STEP 1: Print the full GitHub event payload (useful for debugging)
+      # toJSON() converts the event object into readable JSON
       - name: Output event data
         run: echo "${{ toJSON(github.event) }}"
 
+      # STEP 2: Download your repository code onto the runner
+      # actions/checkout@v3 is an official GitHub "reusable action"
       - name: Get code
         uses: actions/checkout@v3
 
+      # STEP 3: Install project dependencies using package-lock.json
+      # npm ci is faster and stricter than npm install (good for CI)
       - name: Install dependencies
         run: npm ci
 
+      # STEP 4: Run the test suite (e.g., Vitest, Jest)
+      # If tests fail, the workflow STOPS here (no deploy)
       - name: Test code
         run: npm run test
 
+      # STEP 5: Build the production bundle
+      # If the build fails, the workflow STOPS here (no deploy)
       - name: Build code
         run: npm run build
 
+      # STEP 6: Fake deploy step (replace with real deploy command)
+      # Only runs if ALL previous steps succeeded
       - name: Deploy project
         run: echo "Deploying..."
