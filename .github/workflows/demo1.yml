@@ -88,6 +88,7 @@ jobs:
         run: npm run build
 
       # STEP 6: Fake deploy step (replace with real deploy command)
-      # Only runs if ALL previous steps succeeded
+      # Only runs if ALL previous steps succeeded    
+      
       - name: Deploy project
         run: echo "Deploying..."
